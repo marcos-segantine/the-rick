@@ -1,15 +1,14 @@
-﻿using System;
-using System.IO;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Threading.Tasks;
+﻿using System.Net.Http.Headers;
 using System.Diagnostics;
+using System.Text;
+using Newtonsoft.Json.Linq;
 using Microsoft.Extensions.Configuration;
 using OpenAI_API;
 using OpenAI_API.Models;
 
 class Program
 {
+    private static readonly HttpClient client = new HttpClient();
     static async Task Main()
     {
         Console.Clear();
@@ -19,9 +18,13 @@ class Program
         // GetAudio(audioUid);
         // SendFile("./audios/" + audioUid).Wait();
 
-        string responseFromAI = await AskToAI("");
+        // string responseFromAI = await AskToAI("");
 
-        Console.WriteLine(responseFromAI);
+        // Console.WriteLine(responseFromAI);
+
+        SpeechToText("Meu nome é Rick, é um prazer conhecer você");
+
+        Console.ReadLine();
     }
 
     public static void GetAudio(string fileName)
@@ -51,6 +54,41 @@ class Program
         return guid.ToString();
     }
 
+    private static async Task SpeechToText(string inputText)
+    {
+        var apiKey = GetEnvironmentKeys("OPEN_AI_KEY");
+        var model = "tts-1";
+        var voice = "shimmer";
+        var speechFilePath = Path.Combine(Directory.GetCurrentDirectory(), "speech.mp3");
+
+        var requestBody = new
+        {
+            model = model,
+            voice = voice,
+            input = inputText
+        };
+
+        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+
+        var response = await client.PostAsync(
+            "https://api.openai.com/v1/audio/speech",
+            new StringContent(JObject.FromObject(requestBody).ToString(), Encoding.UTF8, "application/json")
+        );
+
+        if (response.IsSuccessStatusCode)
+        {
+            var responseBytes = await response.Content.ReadAsByteArrayAsync();
+            await File.WriteAllBytesAsync(speechFilePath, responseBytes);
+            Console.WriteLine($"Audio file saved to: {speechFilePath}");
+        }
+        else
+        {
+            Console.WriteLine($"Error: {response.StatusCode}");
+            var errorContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine(errorContent);
+        }
+    }
+
     private static async Task<string> AskToAI(string question)
     {
         string apiKey = GetEnvironmentKeys("OPEN_AI_KEY");
@@ -62,6 +100,7 @@ class Program
         chat.RequestParameters.Temperature = 0;
 
         chat.AppendSystemMessage("You are a robot whose mission is just to talk to people, pretend you were created by Marcos Segantine. If anyone asks where you are, say you are in the city of Nova Ponte in Minas Gerais, Brazil");
+        chat.AppendSystemMessage("pretend your name is Rick");
 
         chat.AppendUserInput(question);
         string response = await chat.GetResponseFromChatbotAsync();
