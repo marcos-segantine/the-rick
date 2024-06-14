@@ -5,17 +5,23 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using Microsoft.Extensions.Configuration;
+using OpenAI_API;
+using OpenAI_API.Models;
 
 class Program
 {
-    static void Main()
+    static async Task Main()
     {
         Console.Clear();
 
         string audioUid = GetRandomUid() + ".wav";
 
-        GetAudio(audioUid);
-        SendFile("./audios/" + audioUid).Wait();
+        // GetAudio(audioUid);
+        // SendFile("./audios/" + audioUid).Wait();
+
+        string responseFromAI = await AskToAI("");
+
+        Console.WriteLine(responseFromAI);
     }
 
     public static void GetAudio(string fileName)
@@ -45,7 +51,25 @@ class Program
         return guid.ToString();
     }
 
-    private static async Task SendFile(string audioPath)
+    private static async Task<string> AskToAI(string question)
+    {
+        string apiKey = GetEnvironmentKeys("OPEN_AI_KEY");
+
+        OpenAIAPI api = new OpenAIAPI(apiKey);
+
+        var chat = api.Chat.CreateConversation();
+        chat.Model = Model.GPT4_Turbo;
+        chat.RequestParameters.Temperature = 0;
+
+        chat.AppendSystemMessage("You are a robot whose mission is just to talk to people, pretend you were created by Marcos Segantine. If anyone asks where you are, say you are in the city of Nova Ponte in Minas Gerais, Brazil");
+
+        chat.AppendUserInput(question);
+        string response = await chat.GetResponseFromChatbotAsync();
+
+        return response;
+    }
+
+    private static string GetEnvironmentKeys(string EnvironmentKey)
     {
         var builder = new ConfigurationBuilder()
                             .SetBasePath(AppContext.BaseDirectory)
@@ -55,9 +79,14 @@ class Program
         IConfiguration configuration = builder.Build();
 
 
-        var key = configuration["OPEN_AI_KEY"];
+        string key = configuration[EnvironmentKey];
 
-        string apiKey = key;
+        return key;
+    }
+
+    private static async Task SendFile(string audioPath)
+    {
+        string apiKey = GetEnvironmentKeys("OPEN_AI_KEY");
         string model = "whisper-1";
 
         using (var client = new HttpClient())
