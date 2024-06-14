@@ -15,15 +15,12 @@ class Program
 
         string audioUid = GetRandomUid() + ".wav";
 
-        // GetAudio(audioUid);
-        // SendFile("./audios/" + audioUid).Wait();
+        GetAudio(audioUid);
+        SendFile("./audios/" + audioUid).Wait();
 
-        // string responseFromAI = await AskToAI("");
+        string responseFromAI = await AskToAI("");
 
-        // Console.WriteLine(responseFromAI);
-
-        SpeechToText("Meu nome é Rick, é um prazer conhecer você");
-
+        SpeechToText(responseFromAI, audioUid);
         Console.ReadLine();
     }
 
@@ -54,12 +51,12 @@ class Program
         return guid.ToString();
     }
 
-    private static async Task SpeechToText(string inputText)
+    private static async Task SpeechToText(string inputText, string fileName)
     {
         var apiKey = GetEnvironmentKeys("OPEN_AI_KEY");
         var model = "tts-1";
         var voice = "shimmer";
-        var speechFilePath = Path.Combine(Directory.GetCurrentDirectory(), "speech.mp3");
+        var speechFilePath = Path.Combine(Directory.GetCurrentDirectory(), "responses", fileName + ".mp3");
 
         var requestBody = new
         {
