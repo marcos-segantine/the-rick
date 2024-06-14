@@ -13,17 +13,21 @@ class Program
     {
         Console.Clear();
 
-        string audioUid = GetRandomUid() + ".wav";
+        string audioUid = GetRandomUid();
 
         GetAudio(audioUid);
         SendFile("./audios/" + audioUid).Wait();
 
         string responseFromAI = await AskToAI("");
 
-        SpeechToText(responseFromAI, audioUid);
-        Console.ReadLine();
+        await SpeechToText(responseFromAI, audioUid);
 
-        RunResponse("fbe30827-c2a3-4e2d-9859-1156b508e9e2.wav.mp3");
+        while (!File.Exists("./responses/" + audioUid + ".mp3"))
+        {
+            Thread.Sleep(500);
+        }
+
+        RunResponse(audioUid);
     }
 
     public static void GetAudio(string fileName)
@@ -33,7 +37,7 @@ class Program
             process.StartInfo = new ProcessStartInfo()
             {
                 FileName = "/usr/bin/arecord",
-                Arguments = "-D plughw:0,0 -f cd -t wav -d 5 /home/marcos/projects/the-rick/audios/" + fileName,
+                Arguments = "-D plughw:0,0 -f cd -t wav -d 3 /home/marcos/projects/the-rick/audios/" + fileName + ".wav",
                 RedirectStandardOutput = false,
                 UseShellExecute = false,
                 CreateNoWindow = true,
@@ -60,7 +64,7 @@ class Program
             process.StartInfo = new ProcessStartInfo()
             {
                 FileName = "/usr/bin/play",
-                Arguments = "/home/marcos/projects/the-rick/responses/" + fileName,
+                Arguments = "/home/marcos/projects/the-rick/responses/" + fileName + ".mp3",
                 RedirectStandardOutput = false,
                 CreateNoWindow = true,
                 UseShellExecute = false,
@@ -156,9 +160,9 @@ class Program
 
                 var content = new MultipartFormDataContent();
 
-                var fileContent = new ByteArrayContent(File.ReadAllBytes(audioPath));
+                var fileContent = new ByteArrayContent(File.ReadAllBytes(audioPath + ".wav"));
                 fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("audio/wav");
-                content.Add(fileContent, "file", Path.GetFileName(audioPath));
+                content.Add(fileContent, "file", Path.GetFileName(audioPath + ".wav"));
 
                 content.Add(new StringContent(model), "model");
 

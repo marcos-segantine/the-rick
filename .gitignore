@@ -2,3 +2,5 @@
 /obj
 arecord
 appsettings.json
+responses/
+audios/
