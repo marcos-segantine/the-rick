@@ -22,6 +22,8 @@ class Program
 
         SpeechToText(responseFromAI, audioUid);
         Console.ReadLine();
+
+        RunResponse("fbe30827-c2a3-4e2d-9859-1156b508e9e2.wav.mp3");
     }
 
     public static void GetAudio(string fileName)
@@ -49,6 +51,25 @@ class Program
     {
         Guid guid = Guid.NewGuid();
         return guid.ToString();
+    }
+
+    private static void RunResponse(string fileName)
+    {
+        using (Process process = new Process())
+        {
+            process.StartInfo = new ProcessStartInfo()
+            {
+                FileName = "/usr/bin/play",
+                Arguments = "/home/marcos/projects/the-rick/responses/" + fileName,
+                RedirectStandardOutput = false,
+                CreateNoWindow = true,
+                UseShellExecute = false,
+            };
+
+            process.Start();
+
+            process.WaitForExit();
+        }
     }
 
     private static async Task SpeechToText(string inputText, string fileName)
