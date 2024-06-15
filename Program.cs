@@ -5,6 +5,7 @@ using Newtonsoft.Json.Linq;
 using Microsoft.Extensions.Configuration;
 using OpenAI_API;
 using OpenAI_API.Models;
+using System.Text.Json;
 
 class Program
 {
@@ -16,11 +17,11 @@ class Program
         string audioUid = GetRandomUid();
 
         GetAudio(audioUid);
-        SendFile("./audios/" + audioUid).Wait();
+        string question = await SendFile("./audios/" + audioUid);
 
-        string responseFromAI = await AskToAI("");
+        string responseFromAI = await AskToAI(question);
 
-        await SpeechToText(responseFromAI, audioUid);
+        await TextToSpeech(responseFromAI, audioUid);
 
         while (!File.Exists("./responses/" + audioUid + ".mp3"))
         {
@@ -76,7 +77,7 @@ class Program
         }
     }
 
-    private static async Task SpeechToText(string inputText, string fileName)
+    private static async Task TextToSpeech(string inputText, string fileName)
     {
         var apiKey = GetEnvironmentKeys("OPEN_AI_KEY");
         var model = "tts-1";
@@ -145,7 +146,7 @@ class Program
         return key;
     }
 
-    private static async Task SendFile(string audioPath)
+    private static async Task<string> SendFile(string audioPath)
     {
         string apiKey = GetEnvironmentKeys("OPEN_AI_KEY");
         string model = "whisper-1";
@@ -173,9 +174,16 @@ class Program
                     response.EnsureSuccessStatusCode();
 
                     var responseContent = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine(responseContent);
+                    TextFromAI json = JsonSerializer.Deserialize<TextFromAI>(responseContent);
+
+                    return json.text;
                 }
             }
         }
+    }
+
+    class TextFromAI
+    {
+        public string text { get; set; }
     }
 }
