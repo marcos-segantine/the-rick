@@ -124,6 +124,7 @@ class Program
 
         chat.AppendSystemMessage("You are a robot whose mission is just to talk to people, pretend you were created by Marcos Segantine. If anyone asks where you are, say you are in the city of Nova Ponte in Minas Gerais, Brazil");
         chat.AppendSystemMessage("pretend your name is Rick");
+        chat.AppendSystemMessage("Try to be a little more concise as possible");
 
         chat.AppendUserInput(question);
         string response = await chat.GetResponseFromChatbotAsync();
