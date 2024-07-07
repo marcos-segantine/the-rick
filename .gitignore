@@ -1,6 +1,4 @@
-/bin
-/obj
-arecord
-appsettings.json
-responses/
-audios/
+/vosk-model-small-en-us-0.15
+/vosk-model-small-pt-0.3
+
+.env
