@@ -1,14 +1,17 @@
 import os
-import wave
 import json
 import pyaudio
 from vosk import Model, KaldiRecognizer
 
+import pyttsx3
 from openai import OpenAI
 
-from dotenv import load_dotenv, dotenv_values 
+from dotenv import load_dotenv
 
 load_dotenv() 
+
+engine = pyttsx3.init()
+engine.setProperty("rate", 120)
 
 client = OpenAI(api_key=os.getenv("OPEAN_AI_KEY"))
 
@@ -41,6 +44,9 @@ def recognize_speech_from_microphone():
             result_json = json.loads(result)
             print("You said: " + result_json['text'])
             
+            if(result_json['text'] == ""):
+              continue
+            
             completion = client.chat.completions.create(
               model="gpt-3.5-turbo",
               messages=[
@@ -52,6 +58,14 @@ def recognize_speech_from_microphone():
             )
             
             print(completion.choices[0].message.content)
+            
+            text_to_speech(completion.choices[0].message.content)
+
+def text_to_speech(text):
+
+    engine.say(text)
+    engine.runAndWait()
+
 
 if __name__ == "__main__":
     recognize_speech_from_microphone()
