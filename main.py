@@ -2,12 +2,12 @@ import os
 import json
 import pyaudio
 from vosk import Model, KaldiRecognizer
-
+import boto3
+import pygame
+import io
 import pyttsx3
 from openai import OpenAI
-
 from dotenv import load_dotenv
-
 load_dotenv() 
 
 engine = pyttsx3.init()
@@ -58,14 +58,40 @@ def recognize_speech_from_microphone():
             )
             
             print(completion.choices[0].message.content)
-            
-            text_to_speech(completion.choices[0].message.content)
+            return completion.choices[0].message.content            
 
 def text_to_speech(text):
+    aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
+    aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
 
-    engine.say(text)
-    engine.runAndWait()
+    polly = boto3.client('polly', 
+                     region_name='sa-east-1', 
+                     aws_access_key_id=aws_access_key_id, 
+                     aws_secret_access_key=aws_secret_access_key)
 
+    response = polly.synthesize_speech(
+        Text=text,
+        OutputFormat='mp3',
+        VoiceId='Salli'
+    )
+    
+    audio_stream = response['AudioStream'].read()
+    return audio_stream
+
+def play_audio(audio_stream):
+    pygame.mixer.init()
+    
+    audio_file = io.BytesIO(audio_stream)
+    
+    pygame.mixer.music.load(audio_file, 'mp3')
+    
+    pygame.mixer.music.play()
+
+    while pygame.mixer.music.get_busy():
+        pygame.time.Clock().tick(10)
 
 if __name__ == "__main__":
-    recognize_speech_from_microphone()
+  while True:
+      text = recognize_speech_from_microphone()
+      audio_stream = text_to_speech(text)
+      play_audio(audio_stream)
